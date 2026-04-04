@@ -17,7 +17,7 @@ export function useSocket(username: string) {
     socket.on('connect', () => {
       setMyId(socket.id!)
     })
-
+//on -->> listening for events from the server and updating the global state accordingly
     // Another user's position updated
     socket.on('user:moved', (user) => {
       updateRemoteUser(user)
