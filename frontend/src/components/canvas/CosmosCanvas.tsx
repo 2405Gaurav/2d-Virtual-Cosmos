@@ -4,15 +4,17 @@ import * as PIXI from 'pixi.js'
 import { useCosmosStore } from '../../store/useCosmosStore'
 import { useSocket } from '../../hooks/useSocket'
 import { useMovement } from '../../hooks/useMovement'
+//The useRef hook is a built-in React tool that allows 
+    // you to persist values across renders without triggering a re-render when those values change. 
+    // It returns a mutable ref object with a single property called .current, 
+    // which can hold any value (e.g., a DOM element, a timer ID, or a previous state)
 
 const PROXIMITY_RADIUS = 150
 const COLORS = [0x6366f1, 0xec4899, 0x14b8a6, 0xf59e0b, 0x10b981, 0xef4444]
 
 export function CosmosCanvas({ username }: { username: string }) {
-  const canvasRef = useRef<HTMLDivElement>(null)//The useRef hook is a built-in React tool that allows 
-  // you to persist values across renders without triggering a re-render when those values change. 
-  // It returns a mutable ref object with a single property called .current, 
-  // which can hold any value (e.g., a DOM element, a timer ID, or a previous state)
+    const canvasRef = useRef<HTMLDivElement>(null)
+    // attach Pixi canvas to DOM
   const appRef = useRef<PIXI.Application | null>(null) 
   //To store the actual Pixi Application instance (PIXI.Application)
 
@@ -44,7 +46,7 @@ useEffect(() => {
     appRef.current = app
     canvasRef.current?.appendChild(app.canvas)// as the user comes we append it to the canvasRef div
 
-    // Starfield
+    // Starfield in the bcekgroundd 
     const stars = new PIXI.Graphics()
     for (let i = 0; i < 200; i++) {
       stars.circle(Math.random() * 1600, Math.random() * 1200, Math.random() * 1.5)
