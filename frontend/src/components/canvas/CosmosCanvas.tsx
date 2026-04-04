@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import * as PIXI from 'pixi.js'
+// PixiJS = high-performance 2D rendering engine (built on WebGL)
 import { useCosmosStore } from '../../store/useCosmosStore'
 import { useSocket } from '../../hooks/useSocket'
 import { useMovement } from '../../hooks/useMovement'
@@ -13,13 +14,14 @@ export function CosmosCanvas({ username }: { username: string }) {
   // It returns a mutable ref object with a single property called .current, 
   // which can hold any value (e.g., a DOM element, a timer ID, or a previous state)
   const appRef = useRef<PIXI.Application | null>(null) 
-  
+  //To store the actual Pixi Application instance (PIXI.Application)
 
 
 
+  // useref --> acts as a "box" for values that don't affect the UI but need to be remembered
 
   const spritesRef = useRef<Map<string, PIXI.Container>>(new Map())
-  // useref --> acts as a "box" for values that don't affect the UI but need to be remembered
+    //This ref holds a Map that associates user IDs (strings) with their corresponding PIXI.Container instances.
   const socketRef = useSocket(username)
 
   useMovement(socketRef)
