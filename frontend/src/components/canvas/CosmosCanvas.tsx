@@ -82,6 +82,8 @@ useEffect(() => {
       const isMe = user.id === myId
 
       if (!spritesRef.current.has(user.id)) {
+          console.log("CREATING:", user.id)
+
         const container = new PIXI.Container()//gaurd condition --> yes the used effect runss when pos changes 
         // but we only want to create the sprite once per user, so we check if it already exists in spritesRef
 
@@ -114,7 +116,7 @@ useEffect(() => {
       const container = spritesRef.current.get(user.id)!
       container.position.set(user.x, user.y)
 
-      // Camera follow local user
+      // Camera follow local userd
       if (isMe) {
         app.stage.pivot.set(
           user.x - window.innerWidth / 2,

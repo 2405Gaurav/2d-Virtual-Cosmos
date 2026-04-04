@@ -6,7 +6,7 @@ import { JoinScreen } from './components/ui/JoinScreen'
 export default function App() {
   const [username, setUsername] = useState<string | null>(null)
 
-  if (!username) {
+  if (!username) {//if username is not set, show the join screen where user can enter their name and join the cosmos
     return <JoinScreen onJoin={setUsername} />
   }
 
