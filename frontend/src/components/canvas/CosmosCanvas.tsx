@@ -77,12 +77,13 @@ useEffect(() => {
       })),
     ]
 
-    allUsers.forEach((user) => {
+    allUsers.forEach((user) =>{
       const isNearby = nearbyUsers.includes(user.id)
       const isMe = user.id === myId
 
       if (!spritesRef.current.has(user.id)) {
-        const container = new PIXI.Container()
+        const container = new PIXI.Container()//gaurd condition --> yes the used effect runss when pos changes 
+        // but we only want to create the sprite once per user, so we check if it already exists in spritesRef
 
         // Proximity ring — v8 Graphics API
         const ring = new PIXI.Graphics()
