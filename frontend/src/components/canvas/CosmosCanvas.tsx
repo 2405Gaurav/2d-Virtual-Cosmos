@@ -8,9 +8,18 @@ const PROXIMITY_RADIUS = 150
 const COLORS = [0x6366f1, 0xec4899, 0x14b8a6, 0xf59e0b, 0x10b981, 0xef4444]
 
 export function CosmosCanvas({ username }: { username: string }) {
-  const canvasRef = useRef<HTMLDivElement>(null)
-  const appRef = useRef<PIXI.Application | null>(null)
+  const canvasRef = useRef<HTMLDivElement>(null)//The useRef hook is a built-in React tool that allows 
+  // you to persist values across renders without triggering a re-render when those values change. 
+  // It returns a mutable ref object with a single property called .current, 
+  // which can hold any value (e.g., a DOM element, a timer ID, or a previous state)
+  const appRef = useRef<PIXI.Application | null>(null) 
+  
+
+
+
+
   const spritesRef = useRef<Map<string, PIXI.Container>>(new Map())
+  // useref --> acts as a "box" for values that don't affect the UI but need to be remembered
   const socketRef = useSocket(username)
 
   useMovement(socketRef)
@@ -31,7 +40,7 @@ useEffect(() => {
     if (destroyed) return  // ← bail out if already unmounted
 
     appRef.current = app
-    canvasRef.current?.appendChild(app.canvas)
+    canvasRef.current?.appendChild(app.canvas)// as the user comes we append it to the canvasRef div
 
     // Starfield
     const stars = new PIXI.Graphics()
