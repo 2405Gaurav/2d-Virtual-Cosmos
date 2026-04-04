@@ -24,8 +24,8 @@ export function CosmosCanvas({ username }: { username: string }) {
 
   const spritesRef = useRef<Map<string, PIXI.Container>>(new Map())
     //This ref holds a Map that associates user IDs (strings) with their corresponding PIXI.Container instances.
-  const socketRef = useSocket(username)
-
+    
+    const socketRef = useSocket(username)
   useMovement(socketRef)
 
   const { myPosition, myId, remoteUsers, nearbyUsers } = useCosmosStore()

@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react'
-import type { RefObject } from 'react'   // ← type-only import
-import type { Socket } from 'socket.io-client'  // ← same fix here
+import type { RefObject } from 'react'   
+import type { Socket } from 'socket.io-client'  
 import { useCosmosStore } from '../store/useCosmosStore'
 
 const SPEED = 4
 const WORLD_W = 1600
 const WORLD_H = 1200
 
-export function useMovement(socketRef: RefObject<Socket | null>) { // ← typed properly
+export function useMovement(socketRef: RefObject<Socket | null>) { 
   const keys = useRef<Set<string>>(new Set())
   const { myPosition, setMyPosition } = useCosmosStore()
   const posRef = useRef(myPosition)

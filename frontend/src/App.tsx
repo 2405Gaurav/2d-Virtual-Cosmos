@@ -17,3 +17,10 @@ export default function App() {
     </div>
   )
 }
+
+
+
+// Room-based chat (CRITICAL)
+// Smooth movement (lerp)
+// User join/leave animation
+// Message timestamps

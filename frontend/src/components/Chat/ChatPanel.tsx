@@ -2,17 +2,17 @@ import { useState, useRef, useEffect } from 'react'
 import { useCosmosStore } from '../../store/useCosmosStore'
 
 export function ChatPanel() {
-  const { isChatOpen, chatMessages, nearbyUsers, myId, socket } = useCosmosStore()
+  const { isChatOpen, chatMessages, nearbyUsers, myId, socket } = useCosmosStore() // This connects UI → global state
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })//auto scrolllll
   }, [chatMessages])
 
   const sendMessage = () => {
-    if (!input.trim() || !socket) return
-    socket.emit('chat:send', { text: input.trim() }) // ← clean, no window hack
+    if (!input.trim() || !socket) return   // Prevents --->>  empty messages crash if socket missing
+    socket.emit('chat:send', { text: input.trim() }) //clean, no window hack
     setInput('')
   }
 
@@ -24,8 +24,8 @@ export function ChatPanel() {
         💬 {nearbyUsers.length} nearby
       </div>
       <div className="flex-1 overflow-y-auto max-h-64 p-3 flex flex-col gap-2">
-        {chatMessages.map((msg, i) => (
-          <div key={i} className={`flex flex-col ${msg.senderId === myId ? 'items-end' : 'items-start'}`}>
+        {chatMessages.map((msg) => (
+          <div key={msg.senderId} className={`flex flex-col ${msg.senderId === myId ? 'items-end' : 'items-start'}`}>
             <span className="text-xs text-gray-500">{msg.senderName}</span>
             <div className={`px-3 py-1.5 rounded-xl text-sm text-white max-w-[90%] ${
               msg.senderId === myId ? 'bg-indigo-600' : 'bg-gray-700'
