@@ -9,6 +9,7 @@ export interface IMessage extends Document {
 }
 
 const MessageSchema = new Schema<IMessage>({
+    id:         { type: String, required: true },
   senderId:   { type: String, required: true },
   senderName: { type: String, required: true },
   text:       { type: String, required: true },

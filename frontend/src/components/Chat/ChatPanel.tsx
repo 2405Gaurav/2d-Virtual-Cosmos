@@ -2,50 +2,191 @@ import { useState, useRef, useEffect } from 'react'
 import { useCosmosStore } from '../../store/useCosmosStore'
 
 export function ChatPanel() {
-  const { isChatOpen, chatMessages, nearbyUsers, myId, socket } = useCosmosStore() // This connects UI → global state
+  const { isChatOpen, chatMessages, nearbyUsers, myId, socket, remoteUsers } = useCosmosStore()
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })//auto scrolllll
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatMessages])
 
   const sendMessage = () => {
-    if (!input.trim() || !socket) return   // Prevents --->>  empty messages crash if socket missing
-    socket.emit('chat:send', { text: input.trim() }) //clean, no window hack
+    if (!input.trim() || !socket) return
+    socket.emit('chat:send', { text: input.trim() })
     setInput('')
+  }
+
+  // Resolve nearby user names from the remoteUsers map
+  const nearbyUserDetails = nearbyUsers
+    .map(id => remoteUsers.get(id))
+    .filter(Boolean)
+
+  const formatTime = (ts: number) => {
+    const d = new Date(ts)
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
   if (!isChatOpen) return null
 
   return (
-    <div className="absolute bottom-4 right-4 w-72 bg-gray-900/90 backdrop-blur border border-gray-700 rounded-2xl flex flex-col overflow-hidden shadow-xl">
-      <div className="px-4 py-2 border-b border-gray-700 text-sm text-indigo-400 font-semibold">
-        💬 {nearbyUsers.length} nearby
-      </div>
-      <div className="flex-1 overflow-y-auto max-h-64 p-3 flex flex-col gap-2">
-        {chatMessages.map((msg) => (
-          <div key={msg.senderId} className={`flex flex-col ${msg.senderId === myId ? 'items-end' : 'items-start'}`}>
-            <span className="text-xs text-gray-500">{msg.senderName}</span>
-            <div className={`px-3 py-1.5 rounded-xl text-sm text-white max-w-[90%] ${
-              msg.senderId === myId ? 'bg-indigo-600' : 'bg-gray-700'
-            }`}>
-              {msg.text}
+    <div className="absolute bottom-4 right-4 w-80 flex flex-col overflow-hidden shadow-2xl"
+      style={{
+        background: 'rgba(9, 9, 20, 0.92)',
+        backdropFilter: 'blur(16px)',
+        border: '1px solid rgba(99,102,241,0.25)',
+        borderRadius: '20px',
+        maxHeight: '420px',
+      }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&display=swap');
+        .chat-font { font-family: 'Syne', sans-serif; }
+        .msg-enter { animation: msgIn 0.2s ease forwards; }
+        @keyframes msgIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .chat-input:focus { outline: none; box-shadow: 0 0 0 1.5px rgba(99,102,241,0.5); }
+        .send-btn:hover { background: rgba(99,102,241,0.9); }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 4px; }
+      `}</style>
+
+      {/* ── Header: who's in this chat ── */}
+      <div className="px-4 py-3 flex flex-col gap-2"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {/* Pulsing green dot */}
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            <span className="chat-font text-xs font-semibold text-emerald-400 tracking-wide">
+              Proximity Chat
+            </span>
+          </div>
+          <span className="chat-font text-[10px] text-gray-500 tracking-widest uppercase">
+            {nearbyUsers.length + 1} in range
+          </span>
+        </div>
+
+        {/* Nearby user avatars */}
+        {nearbyUserDetails.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {nearbyUserDetails.map((u) => u && (
+              <div
+                key={u.id}
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full"
+                style={{
+                  background: 'rgba(99,102,241,0.12)',
+                  border: '1px solid rgba(99,102,241,0.2)',
+                }}
+              >
+                <div
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{ background: u.color }}
+                />
+                <span className="chat-font text-[10px] text-gray-300 max-w-[70px] truncate">
+                  {u.username}
+                </span>
+              </div>
+            ))}
+            <div
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full"
+              style={{
+                background: 'rgba(99,102,241,0.2)',
+                border: '1px solid rgba(99,102,241,0.35)',
+              }}
+            >
+              <span className="chat-font text-[10px] text-indigo-300">You</span>
             </div>
           </div>
-        ))}
+        )}
+      </div>
+
+      {/* ── Messages ── */}
+      <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3"
+        style={{ minHeight: '180px', maxHeight: '260px' }}
+      >
+        {chatMessages.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full gap-2 py-6">
+            <span className="text-2xl">💬</span>
+            <p className="chat-font text-[11px] text-gray-600 text-center">
+              You're in range. Say hello!
+            </p>
+          </div>
+        )}
+
+        {chatMessages.map((msg) => {
+          const isMe = msg.senderId === myId
+          return (
+            <div
+              key={msg.id}
+              className={`msg-enter flex flex-col gap-0.5 ${isMe ? 'items-end' : 'items-start'}`}
+            >
+              {/* Sender name + time */}
+              <div className={`flex items-center gap-1.5 px-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                <span className="chat-font text-[10px] font-semibold"
+                  style={{ color: isMe ? '#818cf8' : '#94a3b8' }}
+                >
+                  {isMe ? 'You' : msg.senderName}
+                </span>
+                <span className="chat-font text-[9px] text-gray-600">
+                  {formatTime(msg.timestamp)}
+                </span>
+              </div>
+
+              {/* Bubble */}
+              <div
+                className="chat-font px-3 py-2 text-sm text-white leading-relaxed"
+                style={{
+                  maxWidth: '85%',
+                  borderRadius: isMe ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
+                  background: isMe
+                    ? 'linear-gradient(135deg, #4f46e5, #7c3aed)'
+                    : 'rgba(255,255,255,0.07)',
+                  border: isMe ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                  boxShadow: isMe ? '0 4px 15px rgba(79,70,229,0.3)' : 'none',
+                  wordBreak: 'break-word',
+                }}
+              >
+                {msg.text}
+              </div>
+            </div>
+          )
+        })}
         <div ref={bottomRef} />
       </div>
-      <div className="flex gap-2 p-2 border-t border-gray-700">
+
+      {/* ── Input ── */}
+      <div className="flex items-center gap-2 p-3"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+      >
         <input
-          className="flex-1 bg-gray-800 text-white text-sm rounded-lg px-3 py-1.5 outline-none"
-          placeholder="Message..."
+          className="chat-input flex-1 text-white text-sm rounded-xl px-3 py-2 placeholder-gray-600 transition-all duration-200"
+          style={{
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            fontSize: '13px',
+          }}
+          placeholder="Message the group..."
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && sendMessage()}
         />
-        <button onClick={sendMessage} className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 rounded-lg text-sm">
-          Send
+        <button
+          onClick={sendMessage}
+          disabled={!input.trim()}
+          className="send-btn flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 disabled:opacity-30"
+          style={{ background: 'rgba(99,102,241,0.7)' }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"
+              stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </button>
       </div>
     </div>

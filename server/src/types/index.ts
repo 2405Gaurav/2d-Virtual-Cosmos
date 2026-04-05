@@ -9,7 +9,8 @@ export interface UserState {
   connectedAt: Date
 }
 
-export interface ChatMessage {
+export interface ChatMessage {  
+  id: string  
   senderId: string
   senderName: string
   text: string

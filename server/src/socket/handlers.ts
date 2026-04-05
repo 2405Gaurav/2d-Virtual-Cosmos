@@ -96,25 +96,32 @@ export function setupSocketHandlers(
       await handleProximity(socket, io, activeUsers, proximity)
     })
 
-    socket.on('chat:send', async ({ text }) => {
-      const sender = activeUsers.get(socket.id)
-      if (!sender || !text.trim()) return
+   socket.on('chat:send', async ({ text }) => {
+  const sender = activeUsers.get(socket.id)
+  if (!sender || !text.trim()) return
 
-      const nearby = prevNearby.get(socket.id) ?? []
-      if (nearby.length === 0) return
+  const nearby = prevNearby.get(socket.id) ?? []
+  if (nearby.length === 0) return
 
-      const roomId = proximity.getRoomsForUser(socket.id, nearby)[0]
-      const msg: ChatMessage = {
-        senderId: socket.id,
-        senderName: sender.username,
-        text: text.trim(),
-        roomId,
-        timestamp: new Date(),
-      }
+  const msg: ChatMessage = {
+    id: crypto.randomUUID(),          // ← unique per message
+    senderId: socket.id,
+    senderName: sender.username,
+    text: text.trim(),
+    roomId: [socket.id, ...nearby].sort().join('--'), // for DB logging
+    timestamp: new Date(),
+  }
 
-      io.to(roomId).emit('chat:message', msg)
-      dbService.saveMessage(msg).catch(console.error)
-    })
+  // Send to self
+  socket.emit('chat:message', msg)
+
+  // Send to every nearby user directly — group chat!
+  nearby.forEach(otherId => {
+    io.sockets.sockets.get(otherId)?.emit('chat:message', msg)
+  })
+
+  dbService.saveMessage(msg).catch(console.error)
+})
 
     socket.on('disconnect', async () => {
       console.log(`❌ ${username} disconnected`)
