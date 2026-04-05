@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js'
 
+// the zones on the map, each one is a labeled area users can hangout in
 export interface Zone {
   id:    string
   label: string
@@ -8,7 +9,7 @@ export interface Zone {
   y:     number
   w:     number
   h:     number
-  color: number   // hex number e.g. 0x6366f1
+  color: number
 }
 
 export const ZONES: Zone[] = [
@@ -21,32 +22,28 @@ export function createZoneLayer(stage: PIXI.Container) {
   const container = new PIXI.Container()
 
   for (const zone of ZONES) {
-    // ── Zone floor fill ─────────────────────────────────────
+    // floor fill
     const floor = new PIXI.Graphics()
     floor.roundRect(zone.x, zone.y, zone.w, zone.h, 24)
     floor.fill({ color: zone.color, alpha: 0.06 })
 
-    // ── Zone border — dashed-look via thin solid line ────────
+    // border
     const border = new PIXI.Graphics()
     border.roundRect(zone.x, zone.y, zone.w, zone.h, 24)
     border.stroke({ color: zone.color, width: 1.5, alpha: 0.35 })
 
-    // ── Corner accents (top-left, top-right, bottom-left, bottom-right) ──
+    // corner bracket things for the techy look
     const CORNER = 20
     const corners = new PIXI.Graphics()
     const cx = zone.x, cy = zone.y, cw = zone.w, ch = zone.h
 
-    // TL
     corners.moveTo(cx, cy + CORNER).lineTo(cx, cy).lineTo(cx + CORNER, cy)
-    // TR
     corners.moveTo(cx + cw - CORNER, cy).lineTo(cx + cw, cy).lineTo(cx + cw, cy + CORNER)
-    // BL
     corners.moveTo(cx, cy + ch - CORNER).lineTo(cx, cy + ch).lineTo(cx + CORNER, cy + ch)
-    // BR
     corners.moveTo(cx + cw - CORNER, cy + ch).lineTo(cx + cw, cy + ch).lineTo(cx + cw, cy + ch - CORNER)
     corners.stroke({ color: zone.color, width: 2.5, alpha: 0.9 })
 
-    // ── Zone label (emoji + name) ────────────────────────────
+    // zone lable text
     const label = new PIXI.Text({
       text: `${zone.emoji}  ${zone.label}`,
       style: new PIXI.TextStyle({

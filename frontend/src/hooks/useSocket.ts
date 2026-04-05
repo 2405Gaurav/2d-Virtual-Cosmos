@@ -17,33 +17,28 @@ export function useSocket(username: string) {
     socket.on('connect', () => {
       setMyId(socket.id!)
     })
-//on -->> listening for events from the server and updating the global state accordingly
 
+    // listning to server events and syncing state
 
-    // Another user's position updated
     socket.on('user:moved', (user) => {
       updateRemoteUser(user)
     })
 
-    // New user joined
     socket.on('user:joined', (user) => {
       updateRemoteUser(user)
     })
 
-    // User left
     socket.on('user:left', (id: string) => {
       removeRemoteUser(id)
         clearTyping(id)
     })
 
-    // All current users on join
+    // get all current users when we first connect
     socket.on('users:init', (users) => {
       users.forEach(updateRemoteUser)
     })
 
-    // Proximity updates from server
   socket.on('proximity:update', (nearbyIds: string[]) => {
-  // Clear typing for anyone who just left our proximity
   const prevNearby = useCosmosStore.getState().nearbyUsers
   const leftProximity = prevNearby.filter(id => !nearbyIds.includes(id))
   leftProximity.forEach(id => clearTyping(id))
@@ -51,12 +46,11 @@ export function useSocket(username: string) {
   setNearbyUsers(nearbyIds)
 })
 
-    // Chat message received
     socket.on('chat:message', (msg) => {
       addMessage(msg)
     })
 
-    // In your socket event listeners inside useSocket (or wherever you wire socket events):
+    // handle when somone updates their profile
 socket.on('user:profile-updated', ({ id, icon, bio }) => {
   useCosmosStore.setState(state => {
     const user = state.remoteUsers.get(id)
@@ -65,13 +59,11 @@ socket.on('user:profile-updated', ({ id, icon, bio }) => {
       updated.set(id, { ...user, icon, bio })
       return { remoteUsers: updated }
     }
-    // Also update myId's icon locally
     if (id === state.myId) return { myIcon: icon, myBio: bio }
     return {}
   })
 })
 
-// Add these listeners inside the useEffect:
 socket.on('chat:typing', ({ senderId, senderName }) => {
   setTyping(senderId, senderName)
 })

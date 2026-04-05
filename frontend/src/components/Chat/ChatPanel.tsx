@@ -9,14 +9,14 @@ export function ChatPanel() {
 
   const [input, setInput] = useState('')
   const bottomRef    = useRef<HTMLDivElement>(null)
-  const isTypingRef  = useRef(false)          // are we currently emitting typing?
+  const isTypingRef  = useRef(false)
   const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatMessages])
 
-  // Emit stopTyping after 1.5s of no keypresses
+  // stops the typing indicator after user hasnt typed for a bit
   const emitStopTyping = useCallback(() => {
     if (isTypingRef.current) {
       socket?.emit('chat:stopTyping')
@@ -29,13 +29,13 @@ export function ChatPanel() {
 
     if (!socket) return
 
-    // Start typing signal (only emit once per typing session)
+    // only emit typing once per session not every keystoke
     if (!isTypingRef.current) {
       socket.emit('chat:typing')
       isTypingRef.current = true
     }
 
-    // Reset the stop timer on every keystroke
+    // restart the stop timer
     if (stopTimerRef.current) clearTimeout(stopTimerRef.current)
     stopTimerRef.current = setTimeout(emitStopTyping, 1500)
   }
@@ -43,7 +43,6 @@ export function ChatPanel() {
   const sendMessage = () => {
     if (!input.trim() || !socket) return
 
-    // Stop typing signal immediately on send
     if (stopTimerRef.current) clearTimeout(stopTimerRef.current)
     emitStopTyping()
 
@@ -51,7 +50,7 @@ export function ChatPanel() {
     setInput('')
   }
 
-  // Cleanup timer on unmount
+  // cleanup on unmount so we dont leak timers
   useEffect(() => {
     return () => {
       if (stopTimerRef.current) clearTimeout(stopTimerRef.current)
@@ -63,7 +62,6 @@ export function ChatPanel() {
     .map(id => remoteUsers.get(id))
     .filter(Boolean)
 
-  // Who is currently typing (exclude self)
   const whoIsTyping = Array.from(typingUsers.entries())
     .filter(([id]) => id !== myId)
     .map(([, name]) => name)
@@ -98,7 +96,6 @@ export function ChatPanel() {
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 4px; }
 
-        /* Typing dots */
         .typing-dot {
           width: 5px; height: 5px; border-radius: 50%;
           background: #818cf8;
@@ -113,7 +110,7 @@ export function ChatPanel() {
         }
       `}</style>
 
-      {/* ── Header ── */}
+      {/* header */}
       <div className="px-4 py-3 flex flex-col gap-2"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
       >
@@ -132,7 +129,6 @@ export function ChatPanel() {
           </span>
         </div>
 
-        {/* Nearby avatars */}
         {nearbyUserDetails.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
             {nearbyUserDetails.map((u) => u && (
@@ -154,7 +150,7 @@ export function ChatPanel() {
         )}
       </div>
 
-      {/* ── Messages ── */}
+      {/* messages area */}
       <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3"
         style={{ minHeight: '180px', maxHeight: '240px' }}
       >
@@ -201,10 +197,9 @@ export function ChatPanel() {
           )
         })}
 
-        {/* ── Typing Indicator ── */}
+        {/* typing indicator */}
         {whoIsTyping.length > 0 && (
           <div className="msg-enter flex items-end gap-2">
-            {/* Bubble with dots */}
             <div className="flex items-center gap-1.5 px-3 py-2.5 rounded-2xl rounded-bl-sm"
               style={{
                 background: 'rgba(255,255,255,0.07)',
@@ -216,7 +211,6 @@ export function ChatPanel() {
               <div className="typing-dot" />
             </div>
 
-            {/* Label */}
             <span className="chat-font text-[10px] text-gray-500 pb-1">
               {whoIsTyping.length === 1
                 ? `${whoIsTyping[0]} is typing`
@@ -230,7 +224,7 @@ export function ChatPanel() {
         <div ref={bottomRef} />
       </div>
 
-      {/* ── Input ── */}
+      {/* input bar */}
       <div className="flex items-center gap-2 p-3"
         style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
       >

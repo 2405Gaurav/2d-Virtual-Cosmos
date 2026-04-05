@@ -85,6 +85,7 @@ interface MagicRingsProps {
   clickBurst?: boolean;
 }
 
+// the cool rings effect for the landing page, uses three.js shaders
 export default function MagicRings({
   color = '#fc42ff',
   colorTwo = '#42fcff',
@@ -202,8 +203,7 @@ export default function MagicRings({
       const rect = mount.getBoundingClientRect();
       const minDim = Math.min(rect.width, rect.height);
       
-      // FIXED: Coordinate space now perfectly matches the shader's aspect ratio logic
-      // This ensures 1:1 consistent feel horizontally and vertically
+      // normalize mouse coords relative to center
       mouseRef.current[0] = (e.clientX - rect.left - rect.width * 0.5) / minDim;
       mouseRef.current[1] = -(e.clientY - rect.top - rect.height * 0.5) / minDim;
     };
@@ -228,20 +228,17 @@ export default function MagicRings({
       frameId = requestAnimationFrame(animate);
       const p = propsRef.current;
 
-      // FIXED: Frame-rate independent time delta (dt)
-      // This prevents jittering if the browser drops frames, and keeps movement 
-      // identical on 60hz vs 144hz monitors.
-      const dt = Math.min(t - lastTime, 50); // Cap at 50ms to prevent huge jumps
+      // dt for frame independant timing, cap at 50ms so it dosent jump weirdly
+      const dt = Math.min(t - lastTime, 50);
       lastTime = t;
       
-      // Calculate a stable LERP factor based on elapsed time
       const lerpFactor = 1.0 - Math.exp(-0.008 * dt);
 
       smoothMouseRef.current[0] += (mouseRef.current[0] - smoothMouseRef.current[0]) * lerpFactor;
       smoothMouseRef.current[1] += (mouseRef.current[1] - smoothMouseRef.current[1]) * lerpFactor;
       hoverAmountRef.current += ((isHoveredRef.current ? 1 : 0) - hoverAmountRef.current) * lerpFactor;
       
-      // Use time delta for burst fade out as well
+      // fade out the burst effect
       burstRef.current *= Math.exp(-0.003 * dt);
       if (burstRef.current < 0.001) burstRef.current = 0;
 

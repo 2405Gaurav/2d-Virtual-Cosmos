@@ -3,18 +3,28 @@ import type { RefObject } from 'react'
 import type { Socket } from 'socket.io-client'  
 import { useCosmosStore } from '../store/useCosmosStore'
 
-// Speed is now units per millisecond (0.3ms * 16ms = ~4.8 units per frame)
-const SPEED = 0.3 
+const SPEED = 0.3 // units per ms, works out to about 4-5px per frame
 const WORLD_W = 6200
 const WORLD_H = 1200
-const NETWORK_TICK_RATE = 50 // Throttle socket emits to ~20 times per second
+const NETWORK_TICK_RATE = 50
 
 export function useMovement(socketRef: RefObject<Socket | null>) { 
   const keys = useRef<Set<string>>(new Set())
 
   useEffect(() => {
-    // toLowerCase() handles CapsLock issues smoothly
-    const onDown = (e: KeyboardEvent) => keys.current.add(e.key.toLowerCase())
+    // dont capture keys when user is typing in a text feild, otherwise
+    // pressing wasd in the chatbox moves the charcter lol
+    const isTypingInInput = () => {
+      const el = document.activeElement
+      if (!el) return false
+      const tag = el.tagName.toLowerCase()
+      return tag === 'input' || tag === 'textarea' || (el as HTMLElement).isContentEditable
+    }
+
+    const onDown = (e: KeyboardEvent) => {
+      if (isTypingInInput()) return
+      keys.current.add(e.key.toLowerCase())
+    }
     const onUp = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase())
 
     window.addEventListener('keydown', onDown)
@@ -30,7 +40,7 @@ export function useMovement(socketRef: RefObject<Socket | null>) {
       const dt = time - lastTime
       lastTime = time
       
-      // Prevent massive jumps if the user switches browser tabs and comes back
+      // skip if dt is huge, probaly user tabbed out
       if (dt > 100) return
 
       const { myPosition, setMyPosition } = useCosmosStore.getState()
@@ -38,7 +48,7 @@ export function useMovement(socketRef: RefObject<Socket | null>) {
       const k = keys.current
       let isMoving = false
 
-      // Frame-rate independent distance calculation
+      // framerate independant movement
       const moveDist = SPEED * dt
 
       if (k.has('arrowup')    || k.has('w')) { y = Math.max(0, y - moveDist); isMoving = true }
@@ -47,11 +57,9 @@ export function useMovement(socketRef: RefObject<Socket | null>) {
       if (k.has('arrowright') || k.has('d')) { x = Math.min(WORLD_W, x + moveDist); isMoving = true }
 
       if (isMoving) {
-        // Update local state instantly for perfect smoothness
         setMyPosition({ x, y })
 
-        // Throttle network emissions so we don't choke the server 
-        // (which causes jitter/rubberbanding for others)
+        // dont spam the server, throttle emits
         if (time - lastEmitTime > NETWORK_TICK_RATE) {
           socketRef.current?.emit('user:move', { x, y })
           lastEmitTime = time

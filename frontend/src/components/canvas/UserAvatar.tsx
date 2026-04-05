@@ -9,8 +9,8 @@ interface UserAvatarProps {
   color:    string        
   isMe:     boolean
   isNearby: boolean
-  scale:    number       // base scale for proximity pulse
-  zoom:     number       // NEW: Canvas zoom level
+  scale:    number
+  zoom:     number
 }
 
 export function UserAvatar({
@@ -20,7 +20,7 @@ export function UserAvatar({
 }: UserAvatarProps) {
   const [hovered, setHovered] = useState(false)
 
-  // 1. Scale the proximity ring proportionally with the zoom
+  // proximity ring scales with the zoom lvl
   const baseRingSize = 300
   const ringSize = baseRingSize * zoom
 
@@ -38,13 +38,13 @@ export function UserAvatar({
     animation:   isNearby ? 'proximityPulse 2s ease-in-out infinite' : 'none',
   }
 
-  // 2. Scale the entire avatar container (avatar + nametag) using CSS transform
+  // whole container scales with zoom so avatars dont look tiny when zoomed out
   const containerStyle: React.CSSProperties = {
     position:  'absolute',
     left:      screenX,
     top:       screenY,
     transform: `translate(-50%, -50%) scale(${scale * zoom})`,
-    transition: 'transform 0.1s ease-out', // Make transform snappy to match ticker
+    transition: 'transform 0.1s ease-out',
     cursor:    isMe ? 'default' : 'pointer',
     userSelect: 'none',
   }
@@ -58,10 +58,10 @@ export function UserAvatar({
         onMouseEnter={() => !isMe && setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        {/* Glow behind circle */}
+        {/* glow effect */}
         <div style={{ position: 'absolute', inset: -8, borderRadius: '50%', background: color, opacity: 0.15, pointerEvents: 'none' }} />
 
-        {/* Main circle */}
+        {/* avatar circle */}
         <div style={{
           width: 48, height: 48, borderRadius: '50%', background: color,
           border: `1.5px solid rgba(255,255,255,0.25)`,
@@ -71,7 +71,7 @@ export function UserAvatar({
           {icon}
         </div>
 
-        {/* Name pill */}
+        {/* name tag */}
         <div style={{
           position: 'absolute', top: 50, left: '50%', transform: 'translateX(-50%)',
           background: 'rgba(13,13,31,0.85)', border: `1px solid ${color}80`,
@@ -81,14 +81,13 @@ export function UserAvatar({
           {username}
         </div>
 
-        {/* YOU badge */}
         {isMe && (
           <div style={{ position: 'absolute', bottom: 60, left: '50%', transform: 'translateX(-50%)', fontSize: 12, color: '#6366f1', whiteSpace: 'nowrap' }}>
             ● YOU
           </div>
         )}
 
-        {/* Hover tooltip */}
+        {/* hover tooltip shows bio and stuff */}
         {hovered && !isMe && (
           <div style={{
             position: 'absolute', bottom: 48, left: '50%', transform: 'translateX(-50%)',

@@ -9,8 +9,8 @@ export function JoinScreen() {
 
   const handleLaunch = () => {
     if (!name.trim()) return
-    setUsername(name.trim())   // ← save to Zustand
-    navigate('/cosmos')        // ← go to canvas route
+    setUsername(name.trim())
+    navigate('/cosmos')
   }
 
   return (

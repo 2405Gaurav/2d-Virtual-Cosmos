@@ -11,7 +11,7 @@ import { createProximityLineLayer, updateProximityLines } from './layers/Proximi
 
 export const WORLD_W = 6200
 export const WORLD_H = 1200
-export const MIN_ZOOM = 0.3 // Exported so buttons can use them
+export const MIN_ZOOM = 0.3
 export const MAX_ZOOM = 2.0
 
 export function CosmosCanvas({ username }: { username: string }) {
@@ -22,10 +22,9 @@ export function CosmosCanvas({ username }: { username: string }) {
   const linesRef   = useRef<PIXI.Graphics | null>(null)
   const cleanupRef = useRef<(() => void) | null>(null)
 
-  // ACTUAL current zoom (lerped each frame). Target is now in the store!
+  // actual zoom is lerped every frame, target zoom lives in zustand
   const zoomCurrentRef = useRef(1)
 
-  // Smooth Pan Offset
   const panOffsetRef = useRef({ x: 0, y: 0 })
   const dragRef = useRef({ active: false, lastX: 0, lastY: 0 })
   const lastPlayerPosRef = useRef({ x: -1, y: -1 })
@@ -53,20 +52,18 @@ export function CosmosCanvas({ username }: { username: string }) {
       createZoneLayer(app.stage)
       linesRef.current = createProximityLineLayer(app.stage)
 
-      // ── Wheel: Update store instead of local ref ────────────
+      // zoom with mouse wheel
       const handleWheel = (e: WheelEvent) => {
         e.preventDefault()
         const zoomFactor = Math.exp(-e.deltaY * 0.002)
         
-        // Read from store
         const currentTarget = useCameraStore.getState().targetZoom
         const newTarget = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, currentTarget * zoomFactor))
         
-        // Write to store
         useCameraStore.getState().setTargetZoom(newTarget)
       }
 
-      // ── Mouse drag pan ────────────────────────────────────
+      // right click or middile click to drag pan
       const handleMouseDown = (e: MouseEvent) => {
         if (e.button !== 2 && e.button !== 1) return
         e.preventDefault()
@@ -98,20 +95,20 @@ export function CosmosCanvas({ username }: { username: string }) {
       window.addEventListener('mouseup',          handleMouseUp)
       app.canvas.addEventListener('contextmenu',  handleContextMenu)
 
-      // ── Ticker ────────────────────────────────────────────
+      // main game loop
       const ticker = new PIXI.Ticker()
       tickerRef.current = ticker
 
       ticker.add((t) => {
         const { myPosition, nearbyUsers, remoteUsers, myId } = useCosmosStore.getState()
 
-        // 1. Smooth Zoom Lerp (Read target from STORE!)
+        // smooth zoom lerp
         const targetZoom = useCameraStore.getState().targetZoom
         const zoomLf = 1.0 - Math.exp(-0.008 * t.deltaMS)
         zoomCurrentRef.current += (targetZoom - zoomCurrentRef.current) * zoomLf
         const zoom = zoomCurrentRef.current
 
-        // 2. Auto-Recenter Pan Offset if the player moves using WASD
+        // slowly recenter pan when player moves with wasd
         if (myPosition.x !== lastPlayerPosRef.current.x || myPosition.y !== lastPlayerPosRef.current.y) {
           panOffsetRef.current.x *= Math.exp(-0.01 * t.deltaMS) 
           panOffsetRef.current.y *= Math.exp(-0.01 * t.deltaMS)
@@ -119,26 +116,26 @@ export function CosmosCanvas({ username }: { username: string }) {
           lastPlayerPosRef.current.y = myPosition.y
         }
 
-        // 3. Base Camera Center & Offset
+        // camera centering math
         const baseTargetX = window.innerWidth  / 2 - myPosition.x * zoom
         const baseTargetY = window.innerHeight / 2 - myPosition.y * zoom
         const targetX = baseTargetX + panOffsetRef.current.x
         const targetY = baseTargetY + panOffsetRef.current.y
 
-        // 4. Lerp camera towards target
+        // lerp camera, faster when dragging so it feels responsive
         const camLf = dragRef.current.active ? 1.0 - Math.exp(-0.03 * t.deltaMS) : 1.0 - Math.exp(-0.005 * t.deltaMS)
         camRef.current.x += (targetX - camRef.current.x) * camLf
         camRef.current.y += (targetY - camRef.current.y) * camLf
 
-        // 5. Apply to Pixi Stage
+        // apply to pixi stage
         app.stage.x = camRef.current.x
         app.stage.y = camRef.current.y
         app.stage.scale.set(zoom)
 
-        // 6. Sync with DOM Layer
+        // sync camera with the DOM overlay layer
         useCameraStore.getState().setCamera(camRef.current.x, camRef.current.y, zoom)
 
-        // 7. Lines
+        // proximity lines between nearby users
         if (linesRef.current && myId) {
           updateProximityLines(linesRef.current, myPosition, nearbyUsers, remoteUsers)
         }

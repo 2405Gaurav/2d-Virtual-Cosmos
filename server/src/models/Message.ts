@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose'
 
 export interface IMessage extends Document {
-  id:         string    // ← add
+  id:         string
   senderId:   string
   senderName: string
   text:       string
@@ -16,8 +16,7 @@ const MessageSchema = new Schema<IMessage>({
   roomId:     { type: String, required: true },
   timestamp:  { type: Date,   default: Date.now },
 })
-// Note: Mongoose's Document already has a built-in `id` (string version of _id)
-// so we don't add it to the Schema — just declare it in the interface above
+// mongoose gives us .id for free from _id so no need to add it to schema
 
 MessageSchema.index({ timestamp: 1 }, { expireAfterSeconds: 86400 })
 

@@ -30,13 +30,13 @@ async function handleProximity(
   prevNearby.set(socket.id, nearbyIds)
   socket.emit('proximity:update', nearbyIds)
 
-  // Sync rooms
+  // update socket rooms for chat
   const oldRooms = proximity.getRoomsForUser(socket.id, prev)
   const newRooms = proximity.getRoomsForUser(socket.id, nearbyIds)
   for (const r of oldRooms) { if (!newRooms.includes(r)) socket.leave(r) }
   for (const r of newRooms) { socket.join(r) }
 
-  // Update the other affected users too
+  // also update the other users who are affected by this change
   const affected = [...new Set([...prev, ...nearbyIds])]
   for (const otherId of affected) {
     const otherSocket = io.sockets.sockets.get(otherId)
@@ -81,11 +81,11 @@ export function setupSocketHandlers(
 
     activeUsers.set(socket.id, user)
 
-    // Bootstrap the new user with everyone already online
+    // send the new user a list of evreyone already online
     const others = Array.from(activeUsers.values()).filter(u => u.id !== socket.id)
     socket.emit('users:init', others)
 
-    // Tell everyone else
+    // let evryone else know someone joined
     socket.broadcast.emit('user:joined', user)
 
     socket.on('user:move', async ({ x, y }) => {
@@ -104,18 +104,18 @@ export function setupSocketHandlers(
   if (nearby.length === 0) return
 
   const msg: ChatMessage = {
-    id: crypto.randomUUID(),          // ← unique per message
+    id: crypto.randomUUID(),
     senderId: socket.id,
     senderName: sender.username,
     text: text.trim(),
-    roomId: [socket.id, ...nearby].sort().join('--'), // for DB logging
+    roomId: [socket.id, ...nearby].sort().join('--'),
     timestamp: new Date(),
   }
 
-  // Send to self
+  // send to ourself first
   socket.emit('chat:message', msg)
 
-  // Send to every nearby user directly — group chat!
+  // then send to everyone nearby, its like a group chat
   nearby.forEach(otherId => {
     io.sockets.sockets.get(otherId)?.emit('chat:message', msg)
   })
@@ -124,24 +124,24 @@ export function setupSocketHandlers(
 })
 
 
-// New event handler inside io.on('connection'):
+// profile update handler
 socket.on('user:update-profile', async ({ icon, bio }: { icon: string; bio: string }) => {
   const current = activeUsers.get(socket.id)
   if (!current) return
 
-  // Sanitise
-  const safeIcon = icon.slice(0, 8)   // one emoji max
+  // basic sanitazation
+  const safeIcon = icon.slice(0, 8)
   const safeBio  = bio.slice(0, 120)
 
   activeUsers.set(socket.id, { ...current, icon: safeIcon, bio: safeBio })
   await dbService.updateProfile(current.username, safeIcon, safeBio)
 
-  // Broadcast so others update their tooltip
+  // tell everyone so their tooltips update
   io.emit('user:profile-updated', { id: socket.id, icon: safeIcon, bio: safeBio })
 })
 
 
-//adding the typing indicators
+// typing indicators
 socket.on('chat:typing', () => {
   const sender = activeUsers.get(socket.id)
   if (!sender) return

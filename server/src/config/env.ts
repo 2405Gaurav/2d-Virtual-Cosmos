@@ -8,7 +8,7 @@ export const ENV = {
   NODE_ENV:     process.env.NODE_ENV     || 'development',
 }
 
-// Fail fast if critical env vars are missing
+// crash early if mongo uri is missing, no point running without it
 if (!ENV.MONGODB_URI) {
   console.error('❌ MONGODB_URI is not set in .env')
   process.exit(1)

@@ -16,7 +16,7 @@ export class ProximityService {
     return nearby
   }
 
-  // Same room ID regardless of who calls it — sorted so A--B === B--A
+  // room id is sorted so both users get the same room regardless of order
   getRoomId(idA: string, idB: string): string {
     return [idA, idB].sort().join('--')
   }

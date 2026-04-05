@@ -13,19 +13,19 @@ export function IconPicker() {
   const [editingBio, setEditingBio] = useState(false)
 
   const apply = (newIcon: string) => {
-    storeSetIcon(newIcon)                                      // ← update store immediately
+    storeSetIcon(newIcon)
     socket?.emit('user:update-profile', { icon: newIcon, bio: localBio })
   }
 
   const saveBio = () => {
     setEditingBio(false)
-    storeSetBio(localBio)                                      // ← update store immediately
+    storeSetBio(localBio)
     socket?.emit('user:update-profile', { icon, bio: localBio })
   }
 
   return (
     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
-      {/* Trigger pill — reads from store directly */}
+      {/* avatar button at the top */}
       <button
         onClick={() => setOpen(o => !o)}
         className="flex items-center gap-2 bg-gray-900/90 backdrop-blur border border-gray-700 
@@ -39,7 +39,6 @@ export function IconPicker() {
       {open && (
         <div className="bg-gray-900/95 backdrop-blur border border-gray-700 rounded-2xl p-4 shadow-2xl w-80">
 
-          {/* Header with close button */}
           <div className="flex items-center justify-between mb-3 px-1">
             <p className="text-xs text-gray-400 font-medium">Choose your icon</p>
             <button
@@ -50,7 +49,7 @@ export function IconPicker() {
             </button>
           </div>
 
-          {/* Icon grid */}
+          {/* icon grid */}
           <div className="grid grid-cols-5 gap-2 mb-4">
             {ICONS.map(ic => (
               <button
@@ -58,7 +57,7 @@ export function IconPicker() {
                 onClick={() => apply(ic)}
                 className={`
                   text-2xl p-2 rounded-xl transition-all flex items-center justify-center aspect-square
-                  ${icon === ic                                // ← compare against store value
+                  ${icon === ic
                     ? 'bg-indigo-600/40 ring-2 ring-indigo-500 scale-110 shadow-lg shadow-indigo-500/20'
                     : 'hover:bg-gray-700/80 hover:scale-105'}
                 `}
@@ -68,7 +67,7 @@ export function IconPicker() {
             ))}
           </div>
 
-          {/* Selected preview — reads from store */}
+          {/* preview of whats selected */}
           <div className="flex items-center gap-3 bg-gray-800/60 rounded-xl px-3 py-2 mb-4">
             <span className="text-3xl">{icon}</span>
             <div>
@@ -77,7 +76,7 @@ export function IconPicker() {
             </div>
           </div>
 
-          {/* Bio editor */}
+          {/* bio section */}
           <div className="border-t border-gray-700/60 pt-3">
             <p className="text-xs text-gray-400 font-medium mb-2 px-1">Short bio</p>
             {editingBio ? (

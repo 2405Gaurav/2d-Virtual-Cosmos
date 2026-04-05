@@ -8,8 +8,7 @@ interface LandingPageProps {
 const LandingPage = ({ onEnter }: LandingPageProps) => {
   const [mounted, setMounted] = useState(false);
 
-  // Generate stars with useMemo (deterministic) — avoids calling setState inside an effect.
-  // Values are derived from index, not Math.random(), so they're stable across renders.
+  // generate starfield positions using a seeded-ish math trick so its deterministic
   const stars = useMemo(
     () =>
       Array.from({ length: 250 }, (_, i) => {
@@ -23,9 +22,7 @@ const LandingPage = ({ onEnter }: LandingPageProps) => {
   );
 
   useEffect(() => {
-    // Wrap in a setTimeout to defer the state update.
-    // This fixes the ESLint warning and guarantees the DOM paints the initial 
-    // opacity-0 state before transitioning to opacity-100.
+    // small delay so the fade in animation actualy works
     const timer = setTimeout(() => {
       setMounted(true);
     }, 50);
@@ -43,7 +40,7 @@ const LandingPage = ({ onEnter }: LandingPageProps) => {
         }
       `}</style>
 
-      {/* Background Stars */}
+      {/* stars in the backgound */}
       <div className={`absolute inset-0 transition-opacity duration-1000 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
         {stars.map((star, i) => (
           <div
@@ -58,13 +55,10 @@ const LandingPage = ({ onEnter }: LandingPageProps) => {
             }}
           />
         ))}
-        <div className="absolute top-[20%] left-[15%] w-12 h-12 star-cross opacity-60" />
-        <div className="absolute top-[60%] right-[20%] w-16 h-16 star-cross opacity-40" />
-        <div className="absolute top-[30%] right-[10%] w-8 h-8 star-cross opacity-70" />
-        <div className="absolute bottom-[40%] left-[25%] w-10 h-10 star-cross opacity-50" />
+      
       </div>
 
-      {/* MagicRings — full screen background, z-0 sits behind all content */}
+      {/* rings shader effect */}
       <div className="absolute inset-0 z-0">
         <MagicRings
           color="#fc42ff"
@@ -90,7 +84,7 @@ const LandingPage = ({ onEnter }: LandingPageProps) => {
         />
       </div>
 
-      {/* Main Content */}
+      {/* main hero content */}
       <div
         className={`relative z-20 flex flex-col items-center w-full px-4 transition-all duration-1000 ease-out delay-300 ${
           mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
@@ -113,7 +107,6 @@ const LandingPage = ({ onEnter }: LandingPageProps) => {
           Explore the infinite.
         </p>
 
-        {/* Enter Button */}
         <div className={`mt-12 transition-opacity duration-1000 delay-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
           <button
             onClick={onEnter}
@@ -125,7 +118,19 @@ const LandingPage = ({ onEnter }: LandingPageProps) => {
             <div className="absolute inset-0 -z-10 bg-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           </button>
         </div>
+
+        <div className={`mt-8 transition-opacity duration-1000 delay-1000 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+          <a href="https://www.thegauravthakur.in/" target="_blank" rel="noopener noreferrer" className="group flex items-center gap-2 font-montserrat font-light text-[11px] tracking-[0.3em] uppercase text-white/30 hover:text-white/70 transition-colors duration-300" >
+
+            <span className="block w-4 h-px bg-white/20 group-hover:bg-white/50 group-hover:w-6 transition-all duration-300" />
+            crafted by Gaurav Thakur
+            <span className="block w-4 h-px bg-white/20 group-hover:bg-white/50 group-hover:w-6 transition-all duration-300" />
+          </a>
+        </div>
       </div>
+
+      
+      
     </div>
   );
 };

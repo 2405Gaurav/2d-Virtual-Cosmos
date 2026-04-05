@@ -3,8 +3,8 @@ import mongoose, { Document, Schema } from 'mongoose'
 export interface IUser extends Document {
   username: string
   color:    string
-  icon:     string   // emoji, e.g. "🚀"
-  bio:      string   // short description
+  icon:     string
+  bio:      string
   lastX:    number
   lastY:    number
   lastSeen: Date

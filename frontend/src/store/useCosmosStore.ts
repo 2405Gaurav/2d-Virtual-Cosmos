@@ -7,8 +7,8 @@ export interface RemoteUser {
   x:        number
   y:        number
   color:    string
-  icon:     string   // ← new
-  bio:      string   // ← new
+  icon:     string
+  bio:      string
 }
 
 export interface ChatMessage {
@@ -19,18 +19,16 @@ export interface ChatMessage {
   timestamp:  number
 }
 
+// main store for everthing cosmos related
 interface CosmosStore {
-  // ── Identity ──────────────────────────────────────────────────
   username:    string | null
   setUsername: (name: string) => void
 
-  // ── Local user profile ────────────────────────────────────────
   icon:    string
   bio:     string
-  setIcon: (icon: string) => void   // ← was missing from interface
-  setBio:  (bio: string)  => void   // ← was missing from interface
+  setIcon: (icon: string) => void
+  setBio:  (bio: string)  => void
 
-  // ── Position & peers ──────────────────────────────────────────
   myId:              string | null
   myPosition:        { x: number; y: number }
   remoteUsers:       Map<string, RemoteUser>
@@ -38,11 +36,9 @@ interface CosmosStore {
   chatMessages:      ChatMessage[]
   isChatOpen:        boolean
 
-  // ── Socket ────────────────────────────────────────────────────
   socket:    Socket | null
   setSocket: (socket: Socket) => void
 
-  // ── Actions ───────────────────────────────────────────────────
   setMyId:          (id: string) => void
   setMyPosition:    (pos: { x: number; y: number }) => void
   updateRemoteUser: (user: RemoteUser) => void
@@ -51,28 +47,23 @@ interface CosmosStore {
   addMessage:       (msg: ChatMessage) => void
   setChatOpen:      (open: boolean) => void
 
-  // Profile update coming in from another user via socket
-  updateRemoteProfile: (id: string, icon: string, bio: string) => void  // ← new
+  updateRemoteProfile: (id: string, icon: string, bio: string) => void
 
-
-  //typing indicators
-    typingUsers: Map<string, string>           // ← add: socketId → username
-  setTyping:   (id: string, name: string) => void  // ← add
-  clearTyping: (id: string) => void                 // ← add
+  // typeing stuff
+  typingUsers: Map<string, string>
+  setTyping:   (id: string, name: string) => void
+  clearTyping: (id: string) => void
 }
 
 export const useCosmosStore = create<CosmosStore>((set) => ({
-  // ── Identity ──────────────────────────────────────────────────
   username:    null,
   setUsername: (name) => set({ username: name }),
 
-  // ── Local user profile ────────────────────────────────────────
-  icon:    '👤',   // ← sensible default instead of null
+  icon:    '👤',
   bio:     '',
   setIcon: (icon) => set({ icon }),
   setBio:  (bio)  => set({ bio }),
 
-  // ── Position & peers ──────────────────────────────────────────
   myId:         null,
   myPosition:   { x: 400, y: 300 },
   remoteUsers:  new Map(),
@@ -80,11 +71,9 @@ export const useCosmosStore = create<CosmosStore>((set) => ({
   chatMessages: [],
   isChatOpen:   false,
 
-  // ── Socket ────────────────────────────────────────────────────
   socket:    null,
   setSocket: (socket) => set({ socket }),
 
-  // ── Actions ───────────────────────────────────────────────────
   setMyId:       (id)  => set({ myId: id }),
   setMyPosition: (pos) => set({ myPosition: pos }),
 
@@ -101,7 +90,7 @@ export const useCosmosStore = create<CosmosStore>((set) => ({
   }),
 
  setNearbyUsers: (ids) => set((s) => {
-  // Clear typing for users no longer nearby
+  // remove typing status for ppl who left proximity
   const newTyping = new Map(s.typingUsers)
   s.nearbyUsers.forEach(id => {
     if (!ids.includes(id)) newTyping.delete(id)
@@ -116,7 +105,7 @@ export const useCosmosStore = create<CosmosStore>((set) => ({
   addMessage:     (msg) => set((s) => ({ chatMessages: [...s.chatMessages, msg] })),
   setChatOpen:    (open) => set({ isChatOpen: open }),
 
-  // Patches icon/bio on a remote user without touching their position/color
+  // patches profile without messing up position/color
   updateRemoteProfile: (id, icon, bio) => set((s) => {
     const existing = s.remoteUsers.get(id)
     if (!existing) return {}
@@ -125,7 +114,6 @@ export const useCosmosStore = create<CosmosStore>((set) => ({
     return { remoteUsers: m }
   }),
 
-//typing indicators
   typingUsers: new Map(),
 setTyping: (id, name) => set(s => {
   const m = new Map(s.typingUsers)

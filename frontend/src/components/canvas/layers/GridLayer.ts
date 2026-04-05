@@ -4,7 +4,7 @@ export function createGridLayer(stage: PIXI.Container, worldW: number, worldH: n
   const GRID = 120
   const grid = new PIXI.Graphics()
 
-  // Grid lines — very subtle, like a holographic HUD
+  // subtile grid lines
   for (let x = 0; x <= worldW; x += GRID) {
     grid.moveTo(x, 0)
     grid.lineTo(x, worldH)
@@ -15,7 +15,7 @@ export function createGridLayer(stage: PIXI.Container, worldW: number, worldH: n
   }
   grid.stroke({ color: 0x1e3a5f, width: 0.5, alpha: 0.3 })
 
-  // Grid intersection dots
+  // litle dots at intersections
   for (let x = 0; x <= worldW; x += GRID) {
     for (let y = 0; y <= worldH; y += GRID) {
       grid.circle(x, y, 1)

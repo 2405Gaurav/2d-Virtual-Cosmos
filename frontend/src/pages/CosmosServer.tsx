@@ -11,6 +11,7 @@ export default function CosmosServer() {
   const username = useCosmosStore(s => s.username)
   const navigate = useNavigate()
 
+  // redirect if no username, they shouldnt be here without one
   useEffect(() => {
     if (!username) navigate('/', { replace: true })
   }, [username, navigate])
@@ -19,17 +20,15 @@ export default function CosmosServer() {
 
   return (
     <div className="w-screen h-screen bg-gray-950 overflow-hidden relative">
-      {/* Layer 1 — Pixi canvas */}
+      {/* pixi canvas layer */}
       <CosmosCanvas username={username} />
 
-      {/* Layer 2 — DOM avatars */}
+      {/* dom avatar overlays */}
       <AvatarLayer />
 
-      {/* Layer 3 — UI chrome */}
+      {/* ui controls on top */}
       <IconPicker />
       <ChatPanel />
-      
-      {/* 2. PLACE IT HERE in your UI layer */}
       <ZoomControls />
     </div>
   )

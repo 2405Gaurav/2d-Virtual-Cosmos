@@ -7,11 +7,9 @@ const COLORS = ['#6366f1','#ec4899','#14b8a6','#f59e0b','#10b981','#ef4444']
 export function AvatarLayer() {
   const { myId, myPosition, remoteUsers, nearbyUsers, username, icon, bio } = useCosmosStore()
   
-  // 1. Destructure zoom out of our updated store
   const { offsetX, offsetY, zoom } = useCameraStore()
 
-  // 2. IMPORTANT: Multiply world coordinates by zoom before adding the camera offset!
-  // world → screen: screenPos = (worldPos * zoom) + stageOffset
+  // convert world coords to screen position, need to acount for zoom
   const toScreen = (wx: number, wy: number) => ({
     sx: (wx * zoom) + offsetX,
     sy: (wy * zoom) + offsetY,
@@ -40,7 +38,7 @@ export function AvatarLayer() {
         }
       `}</style>
 
-      {/* Remote users */}
+      {/* other users */}
       {remoteList.map((u) => (
         <div key={u.id} style={{ pointerEvents: 'auto' }}>
           <UserAvatar
@@ -53,12 +51,12 @@ export function AvatarLayer() {
             isMe={false}
             isNearby={nearbyUsers.includes(u.id)}
             scale={nearbyUsers.includes(u.id) ? 1.08 : 1.0}
-            zoom={zoom} // 3. Pass zoom down
+            zoom={zoom}
           />
         </div>
       ))}
 
-      {/* Local user */}
+      {/* you */}
       <div style={{ pointerEvents: 'none' }}>
         <UserAvatar
           screenX={me.sx}
@@ -70,7 +68,7 @@ export function AvatarLayer() {
           isMe={true}
           isNearby={false}
           scale={1.0}
-          zoom={zoom} // 3. Pass zoom down
+          zoom={zoom}
         />
       </div>
     </div>
