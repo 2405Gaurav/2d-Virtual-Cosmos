@@ -10,6 +10,11 @@ A **2D virtual space** where users can move around, explore zones, and chat with
 
 ---
 
+> ### ⚠️ 🏗️ Important — Backend Cold Start
+> The backend is hosted on **Render's free tier**, which spins down after periods of inactivity. Your **first join / user creation may take 30–60 seconds** while the server wakes up. Once it's running, all subsequent connections and actions will be fast. Just be patient on that first load!
+
+---
+
 ## 📋 Table of Contents
 
 - [Overview](#overview)
@@ -105,6 +110,7 @@ The core mechanic is **proximity-based communication** — when two or more user
 | **Socket.IO** | WebSocket server |
 | **MongoDB + Mongoose 9** | Database & ODM |
 | **dotenv** | Environment variable management |
+| **Render** | Hosting (free tier — see cold start note above) |
 
 ---
 
