@@ -27,12 +27,16 @@ export interface ServerToClientEvents {
   'proximity:update':     (nearbyIds: string[]) => void
   'chat:message':         (msg: ChatMessage) => void
   'user:profile-updated': (data: { id: string; icon: string; bio: string }) => void  // ← add this
+   'chat:typing':      (data: { senderId: string; senderName: string }) => void  // ← add
+  'chat:stopTyping':  (data: { senderId: string }) => void                  
 }
 
 export interface ClientToServerEvents {
   'user:move':           (data: { x: number; y: number }) => void
   'chat:send':           (data: { text: string }) => void
   'user:update-profile': (data: { icon: string; bio: string }) => void  // ← add this
+   'chat:typing':      () => void       // 
+  'chat:stopTyping':  () => void       // 
 }
 
 

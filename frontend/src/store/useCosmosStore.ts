@@ -53,6 +53,12 @@ interface CosmosStore {
 
   // Profile update coming in from another user via socket
   updateRemoteProfile: (id: string, icon: string, bio: string) => void  // ← new
+
+
+  //typing indicators
+    typingUsers: Map<string, string>           // ← add: socketId → username
+  setTyping:   (id: string, name: string) => void  // ← add
+  clearTyping: (id: string) => void                 // ← add
 }
 
 export const useCosmosStore = create<CosmosStore>((set) => ({
@@ -106,4 +112,17 @@ export const useCosmosStore = create<CosmosStore>((set) => ({
     m.set(id, { ...existing, icon, bio })
     return { remoteUsers: m }
   }),
+
+//typing indicators
+  typingUsers: new Map(),
+setTyping: (id, name) => set(s => {
+  const m = new Map(s.typingUsers)
+  m.set(id, name)
+  return { typingUsers: m }
+}),
+clearTyping: (id) => set(s => {
+  const m = new Map(s.typingUsers)
+  m.delete(id)
+  return { typingUsers: m }
+}),
 }))

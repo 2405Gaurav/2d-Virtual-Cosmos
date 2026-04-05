@@ -123,16 +123,8 @@ export function setupSocketHandlers(
   dbService.saveMessage(msg).catch(console.error)
 })
 
-    socket.on('disconnect', async () => {
-      console.log(`❌ ${username} disconnected`)
-      const u = activeUsers.get(socket.id)
-      if (u) await dbService.updateLastPosition(username, u.x, u.y)
-      activeUsers.delete(socket.id)
-      prevNearby.delete(socket.id)
-      io.emit('user:left', socket.id)
-    })
 
-    // New event handler inside io.on('connection'):
+// New event handler inside io.on('connection'):
 socket.on('user:update-profile', async ({ icon, bio }: { icon: string; bio: string }) => {
   const current = activeUsers.get(socket.id)
   if (!current) return
@@ -147,5 +139,43 @@ socket.on('user:update-profile', async ({ icon, bio }: { icon: string; bio: stri
   // Broadcast so others update their tooltip
   io.emit('user:profile-updated', { id: socket.id, icon: safeIcon, bio: safeBio })
 })
+
+
+//adding the typing indicators
+socket.on('chat:typing', () => {
+  const sender = activeUsers.get(socket.id)
+  if (!sender) return
+  const nearby = prevNearby.get(socket.id) ?? []
+  nearby.forEach(otherId => {
+    io.sockets.sockets.get(otherId)?.emit('chat:typing', {
+      senderId: socket.id,
+      senderName: sender.username,
+    })
   })
+})
+
+
+socket.on('chat:stopTyping', () => {
+  const nearby = prevNearby.get(socket.id) ?? []
+  nearby.forEach(otherId => {
+    io.sockets.sockets.get(otherId)?.emit('chat:stopTyping', { senderId: socket.id })
+  })
+
+})
+
+
+  socket.on('disconnect', async () => {
+    console.log(`❌ ${username} disconnected`)
+    const u = activeUsers.get(socket.id)
+      const nearby = prevNearby.get(socket.id) ?? []
+  nearby.forEach(otherId => {
+    io.sockets.sockets.get(otherId)?.emit('chat:stopTyping', { senderId: socket.id })
+  })
+    if (u) await dbService.updateLastPosition(username, u.x, u.y)
+    activeUsers.delete(socket.id)
+    prevNearby.delete(socket.id)
+    io.emit('user:left', socket.id)
+  })
+
+})
 }

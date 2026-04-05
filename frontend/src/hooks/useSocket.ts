@@ -7,7 +7,7 @@ const SOCKET_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000'
 export function useSocket(username: string) {
   const socketRef = useRef<Socket | null>(null)
   const { setMyId, updateRemoteUser, removeRemoteUser,
-          setNearbyUsers, addMessage, setSocket } = useCosmosStore()
+          setNearbyUsers, addMessage, setSocket, setTyping, clearTyping} = useCosmosStore()
 
   useEffect(() => {
     const socket = io(SOCKET_URL, { query: { username } })
@@ -33,6 +33,7 @@ export function useSocket(username: string) {
     // User left
     socket.on('user:left', (id: string) => {
       removeRemoteUser(id)
+        clearTyping(id)
     })
 
     // All current users on join
@@ -63,6 +64,15 @@ socket.on('user:profile-updated', ({ id, icon, bio }) => {
     if (id === state.myId) return { myIcon: icon, myBio: bio }
     return {}
   })
+})
+
+// Add these listeners inside the useEffect:
+socket.on('chat:typing', ({ senderId, senderName }) => {
+  setTyping(senderId, senderName)
+})
+
+socket.on('chat:stopTyping', ({ senderId }) => {
+  clearTyping(senderId)
 })
 
     return () => { socket.disconnect() }
