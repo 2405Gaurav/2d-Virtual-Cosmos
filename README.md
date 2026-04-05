@@ -35,7 +35,6 @@ A **2D virtual space** where users can move around, explore zones, and chat with
 - [State Management](#state-management)
 - [Database Schema](#database-schema)
 - [Socket Events Reference](#socket-events-reference)
-- [Contributing](#contributing)
 - [License](#license)
 
 ---
