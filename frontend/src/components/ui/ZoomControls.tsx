@@ -1,10 +1,13 @@
 import { useCameraStore } from '../../store/useCameraStore'
 import { MIN_ZOOM, MAX_ZOOM } from '../canvas/CosmosCanvas' 
 
+// zoom buttons for the canvas, sits top-right so it dosent
+// get in the way of the chat panel at bottom-right
 export function ZoomControls() {
   const targetZoom = useCameraStore(s => s.targetZoom)
   const setTargetZoom = useCameraStore(s => s.setTargetZoom)
 
+  // bump zoom by 30% each click, clamp to min/max
   const handleZoomIn = () => {
     setTargetZoom(Math.min(MAX_ZOOM, targetZoom * 1.3))
   }
@@ -16,7 +19,7 @@ export function ZoomControls() {
   const zoomPercent = Math.round(targetZoom * 100)
 
   return (
-    <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col items-center bg-gray-900/90 backdrop-blur border border-gray-700 rounded-xl overflow-hidden shadow-xl z-50">
+    <div className="absolute right-4 top-4 flex flex-col items-center bg-gray-900/90 backdrop-blur border border-gray-700 rounded-xl overflow-hidden shadow-xl z-50">
       
       <button 
         onClick={handleZoomIn}
@@ -29,7 +32,7 @@ export function ZoomControls() {
         </svg>
       </button>
 
-      {/* shows current zoom as a % */}
+      {/* current zoom lvl as percentage */}
       <div className="w-10 py-1 text-center text-[10px] font-bold text-gray-400 border-y border-gray-700/50 bg-gray-950/50 cursor-default select-none">
         {zoomPercent}%
       </div>

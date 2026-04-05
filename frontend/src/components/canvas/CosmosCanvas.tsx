@@ -22,7 +22,7 @@ export function CosmosCanvas({ username }: { username: string }) {
   const linesRef   = useRef<PIXI.Graphics | null>(null)
   const cleanupRef = useRef<(() => void) | null>(null)
 
-  // actual zoom is lerped every frame, target zoom lives in zustand
+  // current zoom gets lerped toward targetZoom each frame
   const zoomCurrentRef = useRef(1)
 
   const panOffsetRef = useRef({ x: 0, y: 0 })
@@ -52,18 +52,31 @@ export function CosmosCanvas({ username }: { username: string }) {
       createZoneLayer(app.stage)
       linesRef.current = createProximityLineLayer(app.stage)
 
-      // zoom with mouse wheel
+      // zoom with scroll wheel - adjusts panOffset so we zoom
+      // toward the mouse cursor instead of screen center
       const handleWheel = (e: WheelEvent) => {
         e.preventDefault()
         const zoomFactor = Math.exp(-e.deltaY * 0.002)
         
         const currentTarget = useCameraStore.getState().targetZoom
         const newTarget = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, currentTarget * zoomFactor))
-        
+
+        // figure out the zoom ratio so we can adjust pan offset
+        // this keeps the point under the cursor stationary
+        const ratio = newTarget / currentTarget
+        const cx = window.innerWidth / 2
+        const cy = window.innerHeight / 2
+        const mx = e.clientX
+        const my = e.clientY
+
+        // shift pan so the spot under the mouse dosnt jump around
+        panOffsetRef.current.x = (panOffsetRef.current.x - (mx - cx)) * ratio + (mx - cx)
+        panOffsetRef.current.y = (panOffsetRef.current.y - (my - cy)) * ratio + (my - cy)
+
         useCameraStore.getState().setTargetZoom(newTarget)
       }
 
-      // right click or middile click to drag pan
+      // right click or middile click to drag-pan the camera
       const handleMouseDown = (e: MouseEvent) => {
         if (e.button !== 2 && e.button !== 1) return
         e.preventDefault()
@@ -95,20 +108,22 @@ export function CosmosCanvas({ username }: { username: string }) {
       window.addEventListener('mouseup',          handleMouseUp)
       app.canvas.addEventListener('contextmenu',  handleContextMenu)
 
-      // main game loop
+      // main game loop - runs every frame
       const ticker = new PIXI.Ticker()
       tickerRef.current = ticker
 
       ticker.add((t) => {
         const { myPosition, nearbyUsers, remoteUsers, myId } = useCosmosStore.getState()
 
-        // smooth zoom lerp
+        // zoom interpolation - using a faster lerp factor so it
+        // dosent feel sluggish when scrolling in or out
         const targetZoom = useCameraStore.getState().targetZoom
-        const zoomLf = 1.0 - Math.exp(-0.008 * t.deltaMS)
+        const zoomLf = 1.0 - Math.exp(-0.025 * t.deltaMS)
         zoomCurrentRef.current += (targetZoom - zoomCurrentRef.current) * zoomLf
         const zoom = zoomCurrentRef.current
 
-        // slowly recenter pan when player moves with wasd
+        // slowly reset pan offset when player moves so the camera
+        // drifts back to center evenutally
         if (myPosition.x !== lastPlayerPosRef.current.x || myPosition.y !== lastPlayerPosRef.current.y) {
           panOffsetRef.current.x *= Math.exp(-0.01 * t.deltaMS) 
           panOffsetRef.current.y *= Math.exp(-0.01 * t.deltaMS)
@@ -116,26 +131,29 @@ export function CosmosCanvas({ username }: { username: string }) {
           lastPlayerPosRef.current.y = myPosition.y
         }
 
-        // camera centering math
+        // figure out where the camera should be pointing
         const baseTargetX = window.innerWidth  / 2 - myPosition.x * zoom
         const baseTargetY = window.innerHeight / 2 - myPosition.y * zoom
         const targetX = baseTargetX + panOffsetRef.current.x
         const targetY = baseTargetY + panOffsetRef.current.y
 
-        // lerp camera, faster when dragging so it feels responsive
-        const camLf = dragRef.current.active ? 1.0 - Math.exp(-0.03 * t.deltaMS) : 1.0 - Math.exp(-0.005 * t.deltaMS)
+        // camera position lerp - faster value so it keeps up with
+        // zoom changes and dosent lag behind causeing weird drift
+        const camLf = dragRef.current.active
+          ? 1.0 - Math.exp(-0.05 * t.deltaMS)
+          : 1.0 - Math.exp(-0.025 * t.deltaMS)
         camRef.current.x += (targetX - camRef.current.x) * camLf
         camRef.current.y += (targetY - camRef.current.y) * camLf
 
-        // apply to pixi stage
+        // apply evrything to the pixi stage
         app.stage.x = camRef.current.x
         app.stage.y = camRef.current.y
         app.stage.scale.set(zoom)
 
-        // sync camera with the DOM overlay layer
+        // sync camera pos with the DOM overlay so UI stuff lines up
         useCameraStore.getState().setCamera(camRef.current.x, camRef.current.y, zoom)
 
-        // proximity lines between nearby users
+        // draw proximity lines between ppl who are close
         if (linesRef.current && myId) {
           updateProximityLines(linesRef.current, myPosition, nearbyUsers, remoteUsers)
         }
