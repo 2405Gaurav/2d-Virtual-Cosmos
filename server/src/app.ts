@@ -1,4 +1,4 @@
-import express from 'express'
+import express, { Request, Response } from 'express'
 import { corsMiddleware } from './middleware/cors'
 
 const app = express()
@@ -6,7 +6,7 @@ const app = express()
 app.use(corsMiddleware)
 app.use(express.json())
 
-app.get('/health', (_, res) => {
+app.get('/health', (_: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
