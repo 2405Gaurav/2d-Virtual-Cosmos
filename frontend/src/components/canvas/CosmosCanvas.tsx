@@ -11,8 +11,8 @@ import { createProximityLineLayer, updateProximityLines } from './layers/Proximi
 
 export const WORLD_W = 6200
 export const WORLD_H = 1200
-const MIN_ZOOM = 0.3
-const MAX_ZOOM = 2.0
+export const MIN_ZOOM = 0.3 // Exported so buttons can use them
+export const MAX_ZOOM = 2.0
 
 export function CosmosCanvas({ username }: { username: string }) {
   const canvasRef  = useRef<HTMLDivElement>(null)
@@ -22,8 +22,7 @@ export function CosmosCanvas({ username }: { username: string }) {
   const linesRef   = useRef<PIXI.Graphics | null>(null)
   const cleanupRef = useRef<(() => void) | null>(null)
 
-  // Zoom: target (set by wheel) and current (lerped each frame)
-  const zoomTargetRef  = useRef(1)
+  // ACTUAL current zoom (lerped each frame). Target is now in the store!
   const zoomCurrentRef = useRef(1)
 
   // Smooth Pan Offset
@@ -54,48 +53,37 @@ export function CosmosCanvas({ username }: { username: string }) {
       createZoneLayer(app.stage)
       linesRef.current = createProximityLineLayer(app.stage)
 
-      // ── Wheel: Trackpad & Mouse smooth scaling ────────────
+      // ── Wheel: Update store instead of local ref ────────────
       const handleWheel = (e: WheelEvent) => {
         e.preventDefault()
-        // Math.exp gives a perfectly smooth scale curve for both scroll wheels and trackpads
         const zoomFactor = Math.exp(-e.deltaY * 0.002)
-        zoomTargetRef.current = Math.min(
-          MAX_ZOOM,
-          Math.max(MIN_ZOOM, zoomTargetRef.current * zoomFactor)
-        )
+        
+        // Read from store
+        const currentTarget = useCameraStore.getState().targetZoom
+        const newTarget = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, currentTarget * zoomFactor))
+        
+        // Write to store
+        useCameraStore.getState().setTargetZoom(newTarget)
       }
 
       // ── Mouse drag pan ────────────────────────────────────
       const handleMouseDown = (e: MouseEvent) => {
-        // Only trigger on Right (2) or Middle (1) click
         if (e.button !== 2 && e.button !== 1) return
         e.preventDefault()
-        
-        dragRef.current = {
-          active: true,
-          lastX:  e.clientX,
-          lastY:  e.clientY,
-        }
+        dragRef.current = { active: true, lastX: e.clientX, lastY: e.clientY }
         app.canvas.style.cursor = 'grabbing'
       }
 
       const handleMouseMove = (e: MouseEvent) => {
         if (!dragRef.current.active) return
-        
-        // Calculate mouse delta
         const dx = e.clientX - dragRef.current.lastX
         const dy = e.clientY - dragRef.current.lastY
-        
-        // Update last pos
         dragRef.current.lastX = e.clientX
         dragRef.current.lastY = e.clientY
-
-        // Add to our camera offset
         panOffsetRef.current.x += dx
         panOffsetRef.current.y += dy
       }
 
-      // ── ESLint Fix: Removed the unused `_e` argument ────────
       const handleMouseUp = () => {
         if (!dragRef.current.active) return
         dragRef.current.active = false
@@ -117,47 +105,40 @@ export function CosmosCanvas({ username }: { username: string }) {
       ticker.add((t) => {
         const { myPosition, nearbyUsers, remoteUsers, myId } = useCosmosStore.getState()
 
-        // 1. Smooth Zoom Lerp
+        // 1. Smooth Zoom Lerp (Read target from STORE!)
+        const targetZoom = useCameraStore.getState().targetZoom
         const zoomLf = 1.0 - Math.exp(-0.008 * t.deltaMS)
-        zoomCurrentRef.current += (zoomTargetRef.current - zoomCurrentRef.current) * zoomLf
+        zoomCurrentRef.current += (targetZoom - zoomCurrentRef.current) * zoomLf
         const zoom = zoomCurrentRef.current
 
         // 2. Auto-Recenter Pan Offset if the player moves using WASD
         if (myPosition.x !== lastPlayerPosRef.current.x || myPosition.y !== lastPlayerPosRef.current.y) {
-          // Player is moving! Decay the pan offset back to zero to snap back to the player
-          panOffsetRef.current.x *= Math.exp(-0.01 * t.deltaMS) // Smoothly slide back
+          panOffsetRef.current.x *= Math.exp(-0.01 * t.deltaMS) 
           panOffsetRef.current.y *= Math.exp(-0.01 * t.deltaMS)
-          
           lastPlayerPosRef.current.x = myPosition.x
           lastPlayerPosRef.current.y = myPosition.y
         }
 
-        // 3. Base Camera Center (focused on player)
+        // 3. Base Camera Center & Offset
         const baseTargetX = window.innerWidth  / 2 - myPosition.x * zoom
         const baseTargetY = window.innerHeight / 2 - myPosition.y * zoom
-
-        // 4. Final Target = Player Center + Mouse Pan Drag Offset
         const targetX = baseTargetX + panOffsetRef.current.x
         const targetY = baseTargetY + panOffsetRef.current.y
 
-        // 5. Lerp camera towards target
-        // Make the camera snappier when actively dragging, smoother when just following
-        const camLf = dragRef.current.active 
-          ? 1.0 - Math.exp(-0.03 * t.deltaMS) 
-          : 1.0 - Math.exp(-0.005 * t.deltaMS)
-
+        // 4. Lerp camera towards target
+        const camLf = dragRef.current.active ? 1.0 - Math.exp(-0.03 * t.deltaMS) : 1.0 - Math.exp(-0.005 * t.deltaMS)
         camRef.current.x += (targetX - camRef.current.x) * camLf
         camRef.current.y += (targetY - camRef.current.y) * camLf
 
-        // 6. Apply to Pixi Stage
+        // 5. Apply to Pixi Stage
         app.stage.x = camRef.current.x
         app.stage.y = camRef.current.y
         app.stage.scale.set(zoom)
 
-        // 7. Sync with DOM Layer
+        // 6. Sync with DOM Layer
         useCameraStore.getState().setCamera(camRef.current.x, camRef.current.y, zoom)
 
-        // 8. Lines
+        // 7. Lines
         if (linesRef.current && myId) {
           updateProximityLines(linesRef.current, myPosition, nearbyUsers, remoteUsers)
         }
@@ -165,7 +146,6 @@ export function CosmosCanvas({ username }: { username: string }) {
 
       ticker.start()
 
-      // Store cleanup fns
       const canvas = app.canvas;
       cleanupRef.current = () => {
         canvas.removeEventListener('wheel',       handleWheel)
