@@ -42,9 +42,14 @@ export function useSocket(username: string) {
     })
 
     // Proximity updates from server
-    socket.on('proximity:update', (nearbyIds: string[]) => {
-      setNearbyUsers(nearbyIds)
-    })
+  socket.on('proximity:update', (nearbyIds: string[]) => {
+  // Clear typing for anyone who just left our proximity
+  const prevNearby = useCosmosStore.getState().nearbyUsers
+  const leftProximity = prevNearby.filter(id => !nearbyIds.includes(id))
+  leftProximity.forEach(id => clearTyping(id))
+
+  setNearbyUsers(nearbyIds)
+})
 
     // Chat message received
     socket.on('chat:message', (msg) => {

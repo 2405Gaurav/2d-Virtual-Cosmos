@@ -100,7 +100,19 @@ export const useCosmosStore = create<CosmosStore>((set) => ({
     return { remoteUsers: m }
   }),
 
-  setNearbyUsers: (ids) => set({ nearbyUsers: ids, isChatOpen: ids.length > 0 }),
+ setNearbyUsers: (ids) => set((s) => {
+  // Clear typing for users no longer nearby
+  const newTyping = new Map(s.typingUsers)
+  s.nearbyUsers.forEach(id => {
+    if (!ids.includes(id)) newTyping.delete(id)
+  })
+
+  return {
+    nearbyUsers: ids,
+    isChatOpen: ids.length > 0,
+    typingUsers: newTyping,
+  }
+}),
   addMessage:     (msg) => set((s) => ({ chatMessages: [...s.chatMessages, msg] })),
   setChatOpen:    (open) => set({ isChatOpen: open }),
 
