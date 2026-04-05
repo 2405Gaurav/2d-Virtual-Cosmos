@@ -12,4 +12,7 @@ export const userRepository = {
   async updatePosition(username: string, x: number, y: number): Promise<void> {
     await User.updateOne({ username }, { lastX: x, lastY: y, lastSeen: new Date() })
   },
+   async updateProfile(username: string, icon: string, bio: string): Promise<void> {
+    await User.updateOne({ username }, { icon, bio })
+  },
 }

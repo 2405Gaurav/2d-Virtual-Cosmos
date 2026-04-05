@@ -50,6 +50,21 @@ export function useSocket(username: string) {
       addMessage(msg)
     })
 
+    // In your socket event listeners inside useSocket (or wherever you wire socket events):
+socket.on('user:profile-updated', ({ id, icon, bio }) => {
+  useCosmosStore.setState(state => {
+    const user = state.remoteUsers.get(id)
+    if (user) {
+      const updated = new Map(state.remoteUsers)
+      updated.set(id, { ...user, icon, bio })
+      return { remoteUsers: updated }
+    }
+    // Also update myId's icon locally
+    if (id === state.myId) return { myIcon: icon, myBio: bio }
+    return {}
+  })
+})
+
     return () => { socket.disconnect() }
   }, [username])
 

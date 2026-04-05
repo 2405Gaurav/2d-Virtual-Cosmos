@@ -70,10 +70,11 @@ export function setupSocketHandlers(
     const username = (socket.handshake.query.username as string) || 'Anonymous'
     console.log(`🔌 ${username} connected (${socket.id})`)
 
-    const { color, lastX, lastY } = await dbService.upsertUser(username)
+   const { color, lastX, lastY, icon, bio } = await dbService.upsertUser(username)
 
     const user: UserState = {
       id: socket.id, username, color,
+      icon, bio,     
       x: lastX, y: lastY,
       connectedAt: new Date(),
     }
@@ -123,5 +124,21 @@ export function setupSocketHandlers(
       prevNearby.delete(socket.id)
       io.emit('user:left', socket.id)
     })
+
+    // New event handler inside io.on('connection'):
+socket.on('user:update-profile', async ({ icon, bio }: { icon: string; bio: string }) => {
+  const current = activeUsers.get(socket.id)
+  if (!current) return
+
+  // Sanitise
+  const safeIcon = icon.slice(0, 8)   // one emoji max
+  const safeBio  = bio.slice(0, 120)
+
+  activeUsers.set(socket.id, { ...current, icon: safeIcon, bio: safeBio })
+  await dbService.updateProfile(current.username, safeIcon, safeBio)
+
+  // Broadcast so others update their tooltip
+  io.emit('user:profile-updated', { id: socket.id, icon: safeIcon, bio: safeBio })
+})
   })
 }
