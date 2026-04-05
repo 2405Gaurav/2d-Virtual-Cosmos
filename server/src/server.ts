@@ -15,7 +15,7 @@ import { ENV } from './config/env'
 const httpServer = createServer(app)
 
 const io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(httpServer, {
-  cors: { origin: ENV.CLIENT_URL, methods: ['GET', 'POST'], credentials: true },
+  cors: { origin: ENV.CLIENT_URL, methods: ['GET', 'POST'], credentials: true },  
 })
 
 const activeUsers      = new Map<string, UserState>()

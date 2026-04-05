@@ -17,6 +17,8 @@ export interface ChatMessage {
 }
 
 interface CosmosStore {
+    username: string | null      // ← add
+  setUsername: (name: string) => void  // ← add
   myId: string | null
   myPosition: { x: number; y: number }
   remoteUsers: Map<string, RemoteUser>
@@ -36,6 +38,8 @@ interface CosmosStore {
 }
 
 export const useCosmosStore = create<CosmosStore>((set) => ({
+  username: null,
+setUsername: (name) => set({ username: name }),
   myId: null,
   myPosition: { x: 400, y: 300 },
   remoteUsers: new Map(),

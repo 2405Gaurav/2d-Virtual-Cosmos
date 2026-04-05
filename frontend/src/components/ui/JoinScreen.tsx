@@ -1,30 +1,72 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
+import { useCosmosStore } from '../../store/useCosmosStore'
 
-interface Props {
-  onJoin: (name: string) => void
-}
-
-export function JoinScreen({ onJoin }: Props) {
+export function JoinScreen() {
   const [name, setName] = useState('')
+  const navigate = useNavigate()
+  const setUsername = useCosmosStore(s => s.setUsername)
+
+  const handleLaunch = () => {
+    if (!name.trim()) return
+    setUsername(name.trim())   // ← save to Zustand
+    navigate('/cosmos')        // ← go to canvas route
+  }
 
   return (
-    <div className="w-screen h-screen bg-gray-950 flex items-center justify-center">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-8 flex flex-col gap-4 w-80">
-        <h1 className="text-white text-2xl font-bold text-center">🌌 Virtual Cosmos</h1>
-        <p className="text-gray-400 text-sm text-center">Enter a name to join the space</p>
+    <div
+      className="w-screen h-screen flex items-center justify-center relative overflow-hidden"
+      style={{ background: '#03020a' }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Syne+Mono&display=swap');
+        .font-syne { font-family: 'Syne', sans-serif; }
+        .font-mono-syne { font-family: 'Syne Mono', monospace; }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .join-anim { animation: fadeUp 0.6s ease forwards; }
+        .join-input:focus { box-shadow: 0 0 0 2px rgba(99,102,241,0.5), 0 0 24px rgba(99,102,241,0.15); }
+      `}</style>
+
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-indigo-700 opacity-5 blur-[100px] pointer-events-none" />
+
+      <div className="join-anim relative z-10 flex flex-col gap-5 w-80">
+        <p className="font-mono-syne text-[10px] text-gray-600 tracking-[0.25em] uppercase text-center">
+          Step 2 of 2
+        </p>
+
+        <div className="text-center">
+          <h2 className="font-syne font-extrabold text-white text-3xl">Who are you?</h2>
+          <p className="font-syne text-gray-500 text-sm mt-1">Choose a name for the cosmos</p>
+        </div>
+
         <input
-          className="bg-gray-800 text-white rounded-lg px-4 py-2 outline-none border border-gray-600 focus:border-indigo-500"
-          placeholder="Your name..."
+          autoFocus
+          className="join-input font-syne bg-white/5 text-white rounded-xl px-5 py-3.5 outline-none border border-white/10 text-sm placeholder-gray-600 transition-all duration-200"
+          placeholder="e.g. Nova, Atlas, Orion..."
           value={name}
           onChange={e => setName(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && name.trim() && onJoin(name.trim())}
+          onKeyDown={e => e.key === 'Enter' && handleLaunch()}
+          maxLength={20}
         />
+
         <button
-          className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg py-2 font-semibold transition"
-          onClick={() => name.trim() && onJoin(name.trim())}
+          onClick={handleLaunch}
+          disabled={!name.trim()}
+          className="font-syne font-bold text-sm tracking-widest uppercase py-4 rounded-xl text-white transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+          style={{
+            background: name.trim() ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#1f1f2e',
+            boxShadow: name.trim() ? '0 0 30px rgba(99,102,241,0.3)' : 'none',
+          }}
         >
-          Enter Cosmos
+          Launch into Cosmos →
         </button>
+
+        <p className="font-mono-syne text-[10px] text-gray-700 text-right -mt-2">
+          {name.length}/20
+        </p>
       </div>
     </div>
   )
