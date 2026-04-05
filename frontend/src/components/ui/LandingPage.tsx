@@ -1,131 +1,133 @@
-import { useEffect, useRef } from 'react'
+import { useMemo, useEffect, useState } from 'react';
+import MagicRings from '../MagicRings';
 
-interface Props {
-  onEnter: () => void
+interface LandingPageProps {
+  onEnter?: () => void;
 }
 
-export function LandingPage({ onEnter }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+const LandingPage = ({ onEnter }: LandingPageProps) => {
+  const [mounted, setMounted] = useState(false);
 
-  // Animated starfield
+  // Generate stars with useMemo (deterministic) — avoids calling setState inside an effect.
+  // Values are derived from index, not Math.random(), so they're stable across renders.
+  const stars = useMemo(
+    () =>
+      Array.from({ length: 250 }, (_, i) => {
+        const r1 = Math.abs(Math.sin(i * 9301 + 49297) * 233280) % 1;
+        const r2 = Math.abs(Math.sin(i * 12345 + 67890) * 233280) % 1;
+        const r3 = Math.abs(Math.sin(i * 54321 + 11111) * 233280) % 1;
+        const r4 = Math.abs(Math.sin(i * 99991 + 22222) * 233280) % 1;
+        return { x: r1 * 100, y: r2 * 100, size: r3 * 2 + 0.5, opacity: r4 * 0.8 + 0.2 };
+      }),
+    []
+  );
+
   useEffect(() => {
-    const canvas = canvasRef.current!
-    const ctx = canvas.getContext('2d')!
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+    // Wrap in a setTimeout to defer the state update.
+    // This fixes the ESLint warning and guarantees the DOM paints the initial 
+    // opacity-0 state before transitioning to opacity-100.
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 50);
 
-    const stars = Array.from({ length: 220 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 1.4 + 0.2,
-      speed: Math.random() * 0.18 + 0.04,
-      alpha: Math.random(),
-      dir: Math.random() > 0.5 ? 1 : -1,
-    }))
-
-    let raf: number
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-      stars.forEach(s => {
-        s.alpha += s.dir * s.speed * 0.012
-        if (s.alpha >= 1 || s.alpha <= 0) s.dir *= -1
-        ctx.beginPath()
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(255,255,255,${s.alpha})`
-        ctx.fill()
-      })
-      raf = requestAnimationFrame(draw)
-    }
-    draw()
-
-    const onResize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-    window.addEventListener('resize', onResize)
-    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize) }
-  }, [])
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-[#03020a] flex flex-col items-center justify-center">
-      {/* Google Font */}
+    <div className="relative w-screen h-screen overflow-hidden bg-[#020613] flex flex-col items-center justify-center selection:bg-blue-500/30">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Syne+Mono&display=swap');
-
-        .font-syne { font-family: 'Syne', sans-serif; }
-        .font-mono-syne { font-family: 'Syne Mono', monospace; }
-
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(28px); }
-          to   { opacity: 1; transform: translateY(0); }
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;900&display=swap');
+        .font-montserrat { font-family: 'Montserrat', sans-serif; }
+        .star-cross {
+          background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 60%);
         }
-        @keyframes pulse-ring {
-          0%, 100% { opacity: 0.18; transform: scale(1); }
-          50%       { opacity: 0.38; transform: scale(1.06); }
-        }
-        .anim-1 { animation: fadeUp 0.9s ease forwards; }
-        .anim-2 { animation: fadeUp 0.9s 0.18s ease forwards; opacity: 0; }
-        .anim-3 { animation: fadeUp 0.9s 0.36s ease forwards; opacity: 0; }
-        .anim-4 { animation: fadeUp 0.9s 0.54s ease forwards; opacity: 0; }
-        .pulse-ring { animation: pulse-ring 3.5s ease-in-out infinite; }
       `}</style>
 
-      {/* Starfield canvas */}
-      <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" />
+      {/* Background Stars */}
+      <div className={`absolute inset-0 transition-opacity duration-1000 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+        {stars.map((star, i) => (
+          <div
+            key={i}
+            className="absolute bg-white rounded-full"
+            style={{
+              left: `${star.x}%`,
+              top: `${star.y}%`,
+              width: `${star.size}px`,
+              height: `${star.size}px`,
+              opacity: star.opacity,
+            }}
+          />
+        ))}
+        <div className="absolute top-[20%] left-[15%] w-12 h-12 star-cross opacity-60" />
+        <div className="absolute top-[60%] right-[20%] w-16 h-16 star-cross opacity-40" />
+        <div className="absolute top-[30%] right-[10%] w-8 h-8 star-cross opacity-70" />
+        <div className="absolute bottom-[40%] left-[25%] w-10 h-10 star-cross opacity-50" />
+      </div>
 
-      {/* Nebula glow blobs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-indigo-700 opacity-10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-violet-500 opacity-10 blur-[100px] pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-indigo-500/10 pulse-ring pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full border border-indigo-400/10 pulse-ring pointer-events-none" style={{ animationDelay: '1.2s' }} />
+      {/* MagicRings — full screen background, z-0 sits behind all content */}
+      <div className="absolute inset-0 z-0">
+        <MagicRings
+          color="#fc42ff"
+          colorTwo="#42fcff"
+          ringCount={6}
+          speed={1}
+          attenuation={10}
+          lineThickness={2}
+          baseRadius={0.35}
+          radiusStep={0.1}
+          scaleRate={0.1}
+          opacity={1}
+          blur={0}
+          noiseAmount={0.1}
+          rotation={0}
+          ringGap={1.5}
+          fadeIn={0.7}
+          fadeOut={0.5}
+          followMouse={true}
+          mouseInfluence={0.2}
+          hoverScale={1.2}
+          parallax={0.1}
+        />
+      </div>
 
-      {/* Content */}
-      <div className="relative z-10 flex flex-col items-center gap-6 text-center px-6">
-        {/* Badge */}
-        <div className="anim-1 font-mono-syne text-[10px] tracking-[0.3em] text-indigo-400 uppercase border border-indigo-500/30 px-4 py-1.5 rounded-full bg-indigo-500/5">
-          Real-time · Proximity · Social
-        </div>
-
-        {/* Title */}
-        <h1 className="anim-2 font-syne font-extrabold text-white leading-none" style={{ fontSize: 'clamp(3rem, 10vw, 7rem)' }}>
-          Virtual
-          <br />
-          <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #818cf8 0%, #c084fc 100%)' }}>
-            Cosmos
-          </span>
-        </h1>
-
-        {/* Subtitle */}
-        <p className="anim-3 font-syne text-gray-400 max-w-sm text-base leading-relaxed">
-          Move through space. Come close to connect.
-          <br />
-          Drift apart to disconnect.
-        </p>
-
-        {/* CTA */}
-        <button
-          onClick={onEnter}
-          className="anim-4 font-syne font-bold text-sm tracking-widest uppercase px-10 py-4 rounded-full text-white transition-all duration-300 hover:scale-105 active:scale-95"
+      {/* Main Content */}
+      <div
+        className={`relative z-20 flex flex-col items-center w-full px-4 transition-all duration-1000 ease-out delay-300 ${
+          mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+        }`}
+      >
+        <h1
+          className="font-montserrat font-black text-white text-center leading-[0.9]"
           style={{
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-            boxShadow: '0 0 40px rgba(99,102,241,0.35)',
+            fontSize: 'clamp(3.5rem, 10vw, 9rem)',
+            letterSpacing: '0.05em',
+            textShadow: '0 0 60px rgba(252,66,255,0.4), 0 0 120px rgba(66,252,255,0.2)',
           }}
         >
-          Enter Cosmos →
-        </button>
+          VIRTUAL
+          <br />
+          COSMOS
+        </h1>
 
-        {/* Hint */}
-        <p className="anim-4 font-mono-syne text-[11px] text-gray-600 tracking-widest uppercase">
-          Move with WASD or Arrow Keys
+        <p className="font-montserrat font-light text-gray-300 text-center mt-6 tracking-[0.2em] text-[clamp(0.9rem,2vw,1.25rem)] uppercase">
+          Explore the infinite.
         </p>
-      </div>
 
-      {/* Bottom bar */}
-      <div className="absolute bottom-6 left-0 right-0 flex justify-center">
-        <span className="font-mono-syne text-[10px] text-gray-700 tracking-widest uppercase">
-          Virtual Cosmos · Real-time Proximity Chat
-        </span>
+        {/* Enter Button */}
+        <div className={`mt-12 transition-opacity duration-1000 delay-700 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+          <button
+            onClick={onEnter}
+            className="group relative px-12 py-4 rounded-full overflow-hidden border border-white/20 bg-black/20 backdrop-blur-md transition-all duration-300 hover:bg-white/10 hover:border-white/50 active:scale-95 shadow-[0_0_30px_rgba(37,99,235,0.2)]"
+          >
+            <span className="relative z-10 font-montserrat font-medium text-xs md:text-sm tracking-[0.4em] uppercase text-white">
+              Enter
+            </span>
+            <div className="absolute inset-0 -z-10 bg-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          </button>
+        </div>
       </div>
     </div>
-  )
-}
+  );
+};
+
+export default LandingPage;

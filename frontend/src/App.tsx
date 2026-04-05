@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LandingPage } from './components/ui/LandingPage'
+import LandingPage  from './components/ui/LandingPage'
 import { JoinScreen } from './components/ui/JoinScreen'
 
 type AppState = 'landing' | 'join'
