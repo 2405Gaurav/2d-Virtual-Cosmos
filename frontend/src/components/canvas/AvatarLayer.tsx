@@ -6,13 +6,12 @@ const COLORS = ['#6366f1','#ec4899','#14b8a6','#f59e0b','#10b981','#ef4444']
 
 export function AvatarLayer() {
   const { myId, myPosition, remoteUsers, nearbyUsers, username, icon, bio } = useCosmosStore()
-  const { offsetX, offsetY } = useCameraStore()
+  const { offsetX, offsetY,zoom } = useCameraStore()
 
-  // world → screen: screenPos = worldPos + stageOffset
-  const toScreen = (wx: number, wy: number) => ({
-    sx: wx + offsetX,
-    sy: wy + offsetY,
-  })
+const toScreen = (wx: number, wy: number) => ({
+  sx: wx * zoom + offsetX,
+  sy: wy * zoom + offsetY,
+})
 
   // Wait until socket has assigned us an ID
   if (!myId || !username) return null

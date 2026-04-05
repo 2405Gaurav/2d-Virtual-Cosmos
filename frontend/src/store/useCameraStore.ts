@@ -1,13 +1,17 @@
 import { create } from 'zustand'
 
 interface CameraStore {
-  offsetX: number   // stage.x  (world→screen: screenX = worldX + offsetX)
-  offsetY: number   // stage.y
-  setCamera: (x: number, y: number) => void
+  offsetX:  number
+  offsetY:  number
+  zoom:     number
+  setCamera: (x: number, y: number, zoom: number) => void
+  setZoom:   (zoom: number) => void
 }
 
 export const useCameraStore = create<CameraStore>((set) => ({
-  offsetX: 0,
-  offsetY: 0,
-  setCamera: (x, y) => set({ offsetX: x, offsetY: y }),
+  offsetX:  0,
+  offsetY:  0,
+  zoom:     1,
+  setCamera: (x, y, zoom) => set({ offsetX: x, offsetY: y, zoom }),
+  setZoom:   (zoom)       => set({ zoom }),
 }))

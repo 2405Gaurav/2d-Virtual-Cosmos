@@ -5,7 +5,7 @@ import { useCosmosStore } from '../store/useCosmosStore'
 
 // Speed is now units per millisecond (0.3ms * 16ms = ~4.8 units per frame)
 const SPEED = 0.3 
-const WORLD_W = 1600
+const WORLD_W = 6200
 const WORLD_H = 1200
 const NETWORK_TICK_RATE = 50 // Throttle socket emits to ~20 times per second
 
